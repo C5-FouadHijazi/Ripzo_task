@@ -4,4 +4,4 @@ const clientSchema = new mongoose.Schema({
   name: { type: String  , required: true},
 });
 
-module.exports = mongoose.model("CLIENT", clientSchema);
+module.exports = mongoose.model("Client", clientSchema);
