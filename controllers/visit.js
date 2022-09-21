@@ -1,4 +1,5 @@
 const visitModel = require("../models/visitSchema");
+const clientModel = require("../models/clientSchema");
 const cache = require("../cache");
 
 const getLessVisitors = async (req, res) => {
@@ -14,8 +15,39 @@ const getLessVisitors = async (req, res) => {
     saturday: 7,
   };
   const dayNumber = daysMap[day];
-  let visits = cache.get(from, to, day);
 
+  let clients = await clientModel.aggregate([
+    {
+      $lookup: {
+        from: "visits",
+        localField: "_id",
+        foreignField: "client",
+        as: "visits",
+      },
+    },
+    {
+      $project: {
+        _id: 1,
+        name: 1,
+        count: {
+          $size: "$visits",
+        },
+      },
+    },
+    {
+      $match: {
+        count: 0,
+      },
+    },
+    {
+      $project: {
+        _id: 1,
+        name: 1,
+      },
+    },
+  ]);
+
+  let visits = cache.get(from, to, day);
   if (!visits) {
     visits = await visitModel.aggregate([
       { $match: { time: { $lte: +to, $gte: +from } } },
@@ -75,7 +107,8 @@ const getLessVisitors = async (req, res) => {
       {
         $project: {
           _id: 0,
-          client: 1,
+          "client._id": 1,
+          "client.name": 1,
         },
       },
     ]);
@@ -84,7 +117,8 @@ const getLessVisitors = async (req, res) => {
 
   res.json({
     success: true,
-    visits,
+    "Zero visits": clients,
+    "Less visits": visits,
   });
 };
 
