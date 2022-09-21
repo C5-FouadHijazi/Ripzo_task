@@ -117,81 +117,9 @@ const getLessVisitors = async (req, res) => {
     ]);
     cache.set(from, to, day, clients);
   }
-
-  let visits = cache.get(from, to, day);
-  if (!visits) {
-    visits = await visitModel.aggregate([
-      {
-        $match: {
-          time: { $lte: +to, $gte: +from },
-        },
-      },
-      {
-        $project: {
-          date: {
-            $toDate: "$time",
-          },
-          client: 1,
-        },
-      },
-      {
-        $project: {
-          day: {
-            $dayOfWeek: "$date",
-          },
-          client: 1,
-        },
-      },
-      {
-        $match: {
-          day: 2,
-        },
-      },
-      {
-        $group: {
-          _id: {
-            client: "$client",
-          },
-          count: {
-            $sum: 1,
-          },
-        },
-      },
-      {
-        $sort: {
-          count: 1,
-        },
-      },
-      {
-        $limit: 10,
-      },
-      {
-        $lookup: {
-          from: "clients",
-          localField: "_id.client",
-          foreignField: "_id",
-          as: "client",
-        },
-      },
-      {
-        $unwind: {
-          path: "$client",
-          preserveNullAndEmptyArrays: false,
-        },
-      },
-      {
-        $project: {
-          _id: "$client._id",
-          name: "$client.name",
-        },
-      },
-    ]);
-    cache.set(from, to, day, visits);
-  }
-
   res.json({
     success: true,
-    clients,
+    "Less Visited Clients": clients,
   });
 };
 
